@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Per Te</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  box-sizing: border-box;
+  --bg: #f3e9d2;
+  --bg2: #ece0c4;
+  --ink: #3b2a1a;
+  --accent: #7a2e2e;
+  --accent2: #b08d57;
+  --card: #fffaf0;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #241a12; --bg2: #1b130d; --ink: #f1e4c9;
+    --accent: #d98c8c; --accent2: #d9b877; --card: #2c2117;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #241a12; --bg2: #1b130d; --ink: #f1e4c9;
+  --accent: #d98c8c; --accent2: #d9b877; --card: #2c2117;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); height:100%; }
+* { box-sizing: border-box; }
+body {
+  margin:0; min-height:100%;
+  background: radial-gradient(circle at top, var(--bg2), var(--bg));
+  color: var(--ink);
+  font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  display:flex; align-items:center; justify-content:center;
+  padding: calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));
+}
+.wrap { width:100%; max-width:440px; }
+.card {
+  background: var(--card); border-radius: 18px; padding: 36px 28px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  border: 1px solid rgba(122,46,46,0.15);
+  text-align:center; position:relative; overflow:hidden;
+}
+.card::before, .card::after {
+  content:""; position:absolute; left:50%; transform:translateX(-50%);
+  width:60%; height:2px; background: var(--accent2); opacity:0.5;
+}
+.card::before{ top:14px; } .card::after{ bottom:14px; }
+h1.title { font-family:'Playfair Display', serif; font-style:italic; font-size:2rem; color: var(--accent); margin: 8px 0 6px; }
+.subtitle { font-size:0.95rem; opacity:0.75; margin-bottom:28px; }
+.heart { font-size:2.2rem; margin-bottom:6px; }
+input#code {
+  width:100%; padding:14px 16px; font-size:1.3rem; letter-spacing:4px; text-align:center;
+  border-radius:10px; border:1px solid var(--accent2); background:transparent; color:var(--ink);
+  font-family:inherit; outline:none;
+}
+input#code:focus { border-color: var(--accent); }
+button.btn {
+  margin-top:18px; width:100%; padding:13px; border:none; border-radius:10px;
+  background: var(--accent); color:#fdf6ea; font-size:1.05rem;
+  font-family:'Playfair Display', serif; cursor:pointer; transition: transform .15s ease;
+}
+button.btn:active { transform: scale(0.97); }
+.error { color: var(--accent); font-size:0.85rem; margin-top:10px; min-height:1.2em; opacity:0; transition:opacity .2s; }
+.error.show { opacity:1; }
+.shake { animation: shake .4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+#book { display:none; }
+.page-num { font-size:0.8rem; opacity:0.6; margin-top:22px; letter-spacing:2px; }
+.chapter { font-family:'Playfair Display', serif; color:var(--accent2); font-size:0.85rem; letter-spacing:3px; text-transform:uppercase; margin-bottom:14px; }
+.page-text { font-size:1.25rem; line-height:1.75; font-style:italic; min-height:190px; display:flex; align-items:center; justify-content:center; transition: opacity .35s ease; }
+.nav { display:flex; gap:12px; margin-top:24px; }
+.nav button { flex:1; padding:11px; border-radius:10px; border:1px solid var(--accent2); background:transparent; color:var(--ink); font-family:'Playfair Display', serif; font-size:0.95rem; cursor:pointer; }
+.nav button:disabled { opacity:0.35; }
+.signature { font-family:'Playfair Display', serif; font-style:italic; color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="gate">
+    <div class="heart">❤</div>
+    <h1 class="title">Per Te</h1>
+    <div class="subtitle">Inserisci il codice per aprire</div>
+    <input id="code" inputmode="numeric" maxlength="6" placeholder="• • • •" autocomplete="off">
+    <button class="btn" onclick="tryUnlock()">Apri</button>
+    <div class="error" id="err">Codice sbagliato, riprova amore</div>
+  </div>
+
+  <div class="card" id="book">
+    <div class="chapter" id="chapter"></div>
+    <div class="page-text" id="pageText"></div>
+    <div class="nav">
+      <button id="prevBtn" onclick="changePage(-1)">← Indietro</button>
+      <button id="nextBtn" onclick="changePage(1)">Avanti →</button>
+    </div>
+    <div class="page-num" id="pageNum"></div>
+  </div>
+</div>
+
+<script>
+const CODE = "1809";
+const pages = [
+  { chapter: "Capitolo 1 · L'inizio", text: "C'era una volta un giorno qualunque, finché non sei arrivata tu. Da quel momento, ogni cosa ha avuto un colore diverso." },
+  { chapter: "Capitolo 2 · Il tuo sorriso", text: "Il tuo sorriso è la prima cosa a cui penso al mattino e l'ultima prima di addormentarmi. Mi fa sentire a casa, ovunque io sia." },
+  { chapter: "Capitolo 3 · Quello che sei per me", text: "Sei la persona con cui voglio ridere delle cose stupide e affrontare ogni giorno, anche quelli difficili. Con te tutto ha un senso più vero." },
+  { chapter: "Capitolo 4 · Grazie", text: "Grazie per essere esattamente come sei, per la tua pazienza, per ogni piccolo gesto che custodisco con cura, anche quando tu non te ne accorgi." },
+  { chapter: "Capitolo 5 · Per sempre", text: "Qualunque cosa accada, voglio che tu sappia una cosa semplice e vera: ti amo oggi come il primo giorno, e domani ancora di più.<br><br><span class='signature'>Con tutto il cuore.</span>" }
+];
+let current = 0;
+
+function tryUnlock(){
+  const val = document.getElementById('code').value.replace(/\D/g,'');
+  const gate = document.getElementById('gate');
+  const err = document.getElementById('err');
+  if(val === CODE){
+    gate.style.display = 'none';
+    document.getElementById('book').style.display = 'block';
+    renderPage();
+  } else {
+    err.classList.add('show');
+    gate.classList.add('shake');
+    setTimeout(()=>gate.classList.remove('shake'), 400);
+  }
+}
+document.getElementById('code').addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+
+function renderPage(){
+  const p = pages[current];
+  document.getElementById('chapter').textContent = p.chapter;
+  const pt = document.getElementById('pageText');
+  pt.style.opacity = 0;
+  setTimeout(()=>{ pt.innerHTML = p.text; pt.style.opacity = 1; }, 200);
+  document.getElementById('pageNum').textContent = (current+1) + ' / ' + pages.length;
+  document.getElementById('prevBtn').disabled = current === 0;
+  document.getElementById('nextBtn').disabled = current === pages.length - 1;
+}
+function changePage(dir){
+  const next = current + dir;
+  if(next < 0 || next >= pages.length) return;
+  current = next;
+  renderPage();
+}
+</script>
+</body>
+</html>
